@@ -1,0 +1,3 @@
+yt_dlp
+faster_whisper
+huggingface_hub[hf_xet]

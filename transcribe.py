@@ -1,13 +1,15 @@
 import os
-from pydub import AudioSegment
+import glob
+import shlex
+import subprocess
 
 # === CONFIGURATION ===
-AUDIO_FILE = "your_audio.mp3"          # Input audio file
-CHUNK_LENGTH_MIN = 30                  # Chunk duration in minutes
+AUDIO_FILE = "data/Vitamin D Expert： The Fastest Way To Dementia & The Big Lie About Sunlight! [wQJlGHVmdrA].mp3"          # Input audio file
+CHUNK_LENGTH_MIN = 10                  # Chunk duration in minutes
 OUTPUT_DIR = "chunks"                  # Temporary chunk storage
 TRANSCRIBER = "faster-whisper"         # Options: "whisper" or "faster-whisper"
 WHISPER_MODEL = "medium"                # tiny, base, small, medium, large
-FINAL_TRANSCRIPT = "full_transcript.txt"
+FINAL_TRANSCRIPT = "Vitamin D Expert： The Fastest Way To Dementia & The Big Lie About Sunlight! [wQJlGHVmdrA].txt"
 
 # === DEPENDENCIES ===
 if TRANSCRIBER == "whisper":
@@ -19,23 +21,28 @@ else:
 
 # === STEP 1: SPLIT AUDIO INTO CHUNKS ===
 def split_audio(input_file, chunk_length_min=30):
-    print("[INFO] Splitting audio into chunks...")
+    print("[INFO] Splitting audio into chunks using ffmpeg...")
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    
-    audio = AudioSegment.from_file(input_file)
-    chunk_length_ms = chunk_length_min * 60 * 1000
-    total_chunks = len(audio) // chunk_length_ms + 1
-    
-    chunk_files = []
-    for i in range(total_chunks):
-        start = i * chunk_length_ms
-        end = min((i+1) * chunk_length_ms, len(audio))
-        chunk = audio[start:end]
-        chunk_file = os.path.join(OUTPUT_DIR, f"chunk_{i:03d}.mp3")
-        chunk.export(chunk_file, format="mp3")
-        chunk_files.append(chunk_file)
+
+    # Output pattern (e.g., chunk_000.mp3, chunk_001.mp3, etc.)
+    output_pattern = os.path.join(OUTPUT_DIR, "chunk_%03d.mp3")
+
+    # FFmpeg command
+    cmd = (
+        f'ffmpeg -hide_banner -loglevel error -i "{input_file}" '
+        f'-f segment -segment_time {chunk_length_min * 60} '
+        f'-c copy "{output_pattern}"'
+    )
+
+    # Execute
+    subprocess.run(shlex.split(cmd), check=True)
+
+    # Get list of created chunk files
+    chunk_files = sorted(glob.glob(os.path.join(OUTPUT_DIR, "chunk_*.mp3")))
+
+    for chunk_file in chunk_files:
         print(f"  - Saved: {chunk_file}")
-    
+
     return chunk_files
 
 # === STEP 2: TRANSCRIBE CHUNKS ===
