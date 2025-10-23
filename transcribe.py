@@ -81,6 +81,13 @@ def save_transcript(transcript, output_file):
         f.write(transcript)
     print(f"[INFO] Transcript saved to: {output_file}")
 
+# === READ TRANSCRIPT ===
+def read_transcript(output_file):
+    with open(output_file, "w", encoding="utf-8") as f:
+        result = f.read()
+    print(f"[INFO] Transcript read from: {output_file}")
+    return result
+
 # === MAIN FUNCTION ===
 def main():
     chunks = split_audio(AUDIO_FILE, CHUNK_LENGTH_MIN)
